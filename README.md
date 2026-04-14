@@ -302,19 +302,6 @@ After finishing the lab:
 
 ---
 
-## 🌟 Make This Repo 10/10 (Recommended Upgrades)
-
-If you want to level this project up further:
-
-- Add unit tests for `MathServices` and `UserServices`.
-- Add CI with GitHub Actions (`mvn test` + `mvn package`).
-- Add input validation and custom error messages.
-- Add a JSON-based Lambda handler for richer REST contracts.
-- Add Infrastructure as Code (SAM/CDK/Terraform) for reproducible deployment.
-- Add API documentation examples (OpenAPI/Swagger).
-
----
-
 ## 📘 References
 
 - AWS Lambda Java docs: https://docs.aws.amazon.com/lambda/latest/dg/lambda-java.html
