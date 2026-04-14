@@ -215,10 +215,22 @@ https://<api-id>.execute-api.<region>.amazonaws.com/Beta?value=14
 
 ```mermaid
 flowchart LR
-	A[Client\nGET /Beta?value=14] --> B[API Gateway\nREST API GET Method]
-	B --> C[VTL Mapping Template\n$input.params("value")]
-	C --> D[AWS Lambda\nMathServices::square]
-	D --> E[Response\n196]
+    A[Client<br/>GET /Beta?value=14] --> B[API Gateway<br/>REST API GET]
+    B --> C[Mapping Template<br/>input param value]
+    C --> D[AWS Lambda<br/>MathServices square]
+    D --> E[Response<br/>196]
+
+    classDef client fill:#FFF4CC,stroke:#B7791F,stroke-width:1.5px,color:#3A2A00;
+    classDef gateway fill:#E6F6FF,stroke:#0B7285,stroke-width:1.5px,color:#083344;
+    classDef mapping fill:#EAF7EC,stroke:#2B8A3E,stroke-width:1.5px,color:#1B4332;
+    classDef lambda fill:#FFE8E8,stroke:#C92A2A,stroke-width:1.5px,color:#5C1A1A;
+    classDef response fill:#F3E8FF,stroke:#7B2CBF,stroke-width:1.5px,color:#3C096C;
+
+    class A client;
+    class B gateway;
+    class C mapping;
+    class D lambda;
+    class E response;
 ```
 
 ```text
