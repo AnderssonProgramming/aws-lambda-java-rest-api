@@ -1,73 +1,122 @@
-# 🚀 AWS Lambda + API Gateway REST API (Java)
+# Serverless REST API with AWS Lambda + Java
 
-Welcome! This repository is a hands-on lab to learn the fundamentals of **serverless microservices** on AWS using:
+![Workshop](https://img.shields.io/badge/Lab-AWS%20Serverless-0A66C2?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-Java%208-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Gateway](https://img.shields.io/badge/API-Amazon%20API%20Gateway-FF4F8B?style=for-the-badge&logo=amazonapigateway&logoColor=white)
 
-- ☕ Java 8
-- 📦 Maven
-- 🧠 AWS Lambda
-- 🌐 Amazon API Gateway (REST API)
+![Build](https://img.shields.io/badge/Build-Maven-C71A36?logo=apachemaven&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-JUnit%205-25A162?logo=junit5&logoColor=white)
+![Lambda](https://img.shields.io/badge/Compute-AWS%20Lambda-FF9900?logo=awslambda&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-The core example is intentionally simple: a Lambda function that returns the **square of an integer**. This keeps the focus on the serverless flow and request mapping mechanics.
+## Clean Design, Clear Serverless Flow
 
----
+This repository provides a hands-on lab to deploy serverless microservices with Java on AWS.
 
-## ✨ What You Build
+It includes two main handlers:
 
-You will expose a Java method as a public REST endpoint:
-
-- Input query param: `value`
-- Output: `value * value`
-
-Example:
-
-`GET https://<api-id>.execute-api.<region>.amazonaws.com/Beta?value=14` → `196`
+- `MathServices::square`: receives an integer and returns its square.
+- `UserServices::postUser`: receives a user object, keeps the same instance, and sets a status message.
 
 ---
 
-## 🧱 Project Structure
+## Quick Navigation
+
+1. [Project Snapshot](#project-snapshot)
+2. [Flow Architecture](#flow-architecture)
+3. [Repository Structure](#repository-structure)
+4. [Prerequisites](#prerequisites)
+5. [Build and Local Tests](#build-and-local-tests)
+6. [Deploy to AWS Lambda](#deploy-to-aws-lambda)
+7. [AWS CLI Runbook (No Console)](#aws-cli-runbook-no-console)
+8. [Expose with API Gateway](#expose-with-api-gateway)
+9. [Invocation Tests](#invocation-tests)
+10. [Troubleshooting](#troubleshooting)
+11. [References](#references)
+
+---
+
+## Project Snapshot
+
+| Area | Implementation |
+| --- | --- |
+| Language | Java 8 |
+| Build | Maven (`jar`) |
+| Testing | JUnit Jupiter 5.10.2 |
+| Use Case 1 | Square of an integer |
+| Use Case 2 | User creation with confirmation status message |
+| HTTP Exposure | Amazon API Gateway (REST) |
+
+---
+
+## Flow Architecture
+
+```mermaid
+flowchart LR
+    C[Client
+GET ?value=14] --> G[API Gateway
+REST Method]
+    G --> M[Mapping Template
+value query param]
+    M --> L[AWS Lambda
+MathServices square]
+    L --> R[Response
+196]
+
+    classDef client fill:#fff4cc,stroke:#b7791f,stroke-width:1.5px,color:#3a2a00;
+    classDef gateway fill:#e8f5ff,stroke:#0077b6,stroke-width:1.5px,color:#023047;
+    classDef mapping fill:#eaf7ec,stroke:#2b8a3e,stroke-width:1.5px,color:#1b4332;
+    classDef lambda fill:#ffe8e8,stroke:#c92a2a,stroke-width:1.5px,color:#5c1a1a;
+    classDef response fill:#f3e8ff,stroke:#7b2cbf,stroke-width:1.5px,color:#3c096c;
+
+    class C client;
+    class G gateway;
+    class M mapping;
+    class L lambda;
+    class R response;
+```
+
+---
+
+## Repository Structure
 
 ```text
-.
-├─ pom.xml
-├─ src/main/java/co/edu/escuelaing/services/
-│  ├─ MathServices.java
-│  ├─ User.java
-│  └─ UserServices.java
-└─ README.md
-```
-
-Main class used in this lab:
-
-```java
-package co.edu.escuelaing.services;
-
-public class MathServices {
-    public static Integer square(Integer i){
-	return i*i;
-    }
-}
+aws-lambda-java-rest-api/
+|- pom.xml
+|- README.md
+|- src/
+|  |- main/
+|  |  |- java/
+|  |     |- co/edu/escuelaing/services/
+|  |        |- MathServices.java
+|  |        |- User.java
+|  |        |- UserServices.java
+|  |- test/
+|     |- java/
+|        |- co/edu/escuelaing/services/
+|           |- MathServicesTest.java
+|           |- UserServicesTest.java
 ```
 
 ---
 
-## ✅ Prerequisites
+## Prerequisites
 
-- AWS account (AWS Academy users can use `LabRole`)
-- Java 8+
-- Maven 3+
-- Permissions to create Lambda functions and API Gateway APIs
+- AWS account with permissions for Lambda, API Gateway, and IAM PassRole.
+- Java 8 or later.
+- Maven 3 or later.
 
-Recommended IAM permissions (minimum):
+Suggested minimum permissions:
 
-- `lambda:*` (or scoped create/update/invoke permissions)
-- `apigateway:*` (or scoped API management permissions)
-- `iam:PassRole` for the Lambda execution role
+- `lambda:*` (or a scoped equivalent)
+- `apigateway:*` (or a scoped equivalent)
+- `iam:PassRole`
 
 ---
 
-## 🔨 1) Build the JAR
+## Build and Local Tests
 
-Compile and package from the repository root:
+Compile, run tests, and package the artifact:
 
 ```bash
 mvn clean package
@@ -75,135 +124,254 @@ mvn clean package
 
 Expected artifact:
 
-- `target/hello-world-1.0-SNAPSHOT.jar`
+```text
+target/hello-world-1.0-SNAPSHOT.jar
+```
 
-This is the file uploaded to AWS Lambda.
+Included tests:
 
----
-
-## 🧠 2) Create the Lambda Function
-
-In AWS Console:
-
-1. Open **Lambda**.
-2. Click **Create function**.
-3. Select **Author from scratch**.
-4. Function name: `square` (or similar).
-5. Runtime: **Java 8**.
-6. Execution role:
-   - AWS Academy: use `LabRole`.
-   - Otherwise: choose an existing role or let AWS create one.
-
-### Upload code
-
-In **Function code**, upload the JAR generated by Maven.
-
-### Configure handler
-
-Set handler to:
-
-`co.edu.escuelaing.services.MathServices::square`
-
-Then click **Deploy/Save**.
+- `MathServicesTest`: validates positive values, negative values, and zero.
+- `UserServicesTest`: validates that the same instance is returned and status is set correctly.
 
 ---
 
-## 🧪 3) Test Lambda Directly
+## Deploy to AWS Lambda
 
-Create a test event:
+### Handler 1: Math Operation
 
-1. Click **Test** → **Configure test event**.
-2. Name: `testSquare`.
-3. Replace JSON body with a single number:
+1. Create a Lambda function (Java 8).
+2. Upload `target/hello-world-1.0-SNAPSHOT.jar`.
+3. Configure the handler:
+
+```text
+co.edu.escuelaing.services.MathServices::square
+```
+
+Suggested test event:
 
 ```json
 5
 ```
 
-4. Save and run **Test**.
+Expected result: `25`.
 
-Expected result: `25`
+### Handler 2: User (Optional API Extension)
 
-Important: in this lab the Lambda receives a **raw number**, not a JSON object.
+Handler:
+
+```text
+co.edu.escuelaing.services.UserServices::postUser
+```
+
+Suggested test event:
+
+```json
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+The `status` field is populated automatically with a confirmation message.
 
 ---
 
-## 🌐 4) Expose Lambda with API Gateway (REST)
+## AWS CLI Runbook (No Console)
 
-### Create API
+The following workflow is fully idempotent: you can run it multiple times without failing when resources already exist.
 
-1. Open **API Gateway**.
-2. Click **Get Started**.
-3. Choose:
-   - **REST API**
-   - **New API**
-   - Endpoint type: **Regional**
-4. API name: `mathServices`.
+It handles:
 
-### Create GET method
+- Lambda create vs. update.
+- API lookup by name vs. create.
+- Existing GET method and integration (safe replace).
+- Existing Lambda permission statement (safe replace).
 
-1. In resources/actions, click **Create Method**.
-2. Select **GET**.
-3. Integration type: **Lambda Function**.
-4. Lambda function name: `square`.
-5. Save.
+### 1. Build the project
 
-### Add query parameter
+```bash
+mvn clean package
+```
 
-1. Open **Method Request**.
-2. Add URL Query String parameter:
-   - `value` (required or optional based on your preference)
+### 2. Set environment variables
 
-### Map query parameter to integration request
+```bash
+export AWS_REGION=us-east-1
+export FUNCTION_NAME=square
+export STAGE_NAME=Beta
+export ROLE_ARN=arn:aws:iam::<account-id>:role/<lambda-execution-role>
+export JAR_PATH=target/hello-world-1.0-SNAPSHOT.jar
+```
 
-1. Open **Integration Request**.
-2. Under URL Query String Parameters, map:
+PowerShell equivalent:
+
+```powershell
+$env:AWS_REGION = "us-east-1"
+$env:FUNCTION_NAME = "square"
+$env:STAGE_NAME = "Beta"
+$env:ROLE_ARN = "arn:aws:iam::<account-id>:role/<lambda-execution-role>"
+$env:JAR_PATH = "target/hello-world-1.0-SNAPSHOT.jar"
+```
+
+### 3. Run idempotent provisioning script (Bash)
+
+```bash
+set -euo pipefail
+
+# 3.1 Account and Lambda bootstrap
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+if aws lambda get-function --function-name "$FUNCTION_NAME" >/dev/null 2>&1; then
+    echo "Updating existing Lambda: $FUNCTION_NAME"
+    aws lambda update-function-code \
+        --function-name "$FUNCTION_NAME" \
+        --zip-file "fileb://$JAR_PATH" >/dev/null
+else
+    echo "Creating Lambda: $FUNCTION_NAME"
+    aws lambda create-function \
+        --function-name "$FUNCTION_NAME" \
+        --runtime java8 \
+        --role "$ROLE_ARN" \
+        --handler co.edu.escuelaing.services.MathServices::square \
+        --zip-file "fileb://$JAR_PATH" >/dev/null
+fi
+
+# 3.2 Reuse existing API by name, or create it
+API_ID=$(aws apigateway get-rest-apis \
+    --query "items[?name=='mathServices'].id | [0]" \
+    --output text)
+
+if [ "$API_ID" = "None" ] || [ -z "$API_ID" ]; then
+    echo "Creating REST API: mathServices"
+    API_ID=$(aws apigateway create-rest-api \
+        --name mathServices \
+        --endpoint-configuration types=REGIONAL \
+        --query id \
+        --output text)
+else
+    echo "Reusing REST API: $API_ID"
+fi
+
+ROOT_RESOURCE_ID=$(aws apigateway get-resources \
+    --rest-api-id "$API_ID" \
+    --query "items[?path=='/'].id | [0]" \
+    --output text)
+
+# 3.3 Ensure GET method exists with query parameter
+if aws apigateway get-method \
+    --rest-api-id "$API_ID" \
+    --resource-id "$ROOT_RESOURCE_ID" \
+    --http-method GET >/dev/null 2>&1; then
+    echo "GET method already exists. Updating request parameter requirement."
+    aws apigateway update-method \
+        --rest-api-id "$API_ID" \
+        --resource-id "$ROOT_RESOURCE_ID" \
+        --http-method GET \
+        --patch-operations op=replace,path=/requestParameters/method.request.querystring.value,value=true >/dev/null 2>&1 \
+    || aws apigateway update-method \
+        --rest-api-id "$API_ID" \
+        --resource-id "$ROOT_RESOURCE_ID" \
+        --http-method GET \
+        --patch-operations op=add,path=/requestParameters/method.request.querystring.value,value=true >/dev/null
+else
+    echo "Creating GET method on root resource."
+    aws apigateway put-method \
+        --rest-api-id "$API_ID" \
+        --resource-id "$ROOT_RESOURCE_ID" \
+        --http-method GET \
+        --authorization-type NONE \
+        --request-parameters method.request.querystring.value=true >/dev/null
+fi
+
+# 3.4 Upsert Lambda integration and request template
+LAMBDA_ARN="arn:aws:lambda:${AWS_REGION}:${ACCOUNT_ID}:function:${FUNCTION_NAME}"
+APIGW_URI="arn:aws:apigateway:${AWS_REGION}:lambda:path/2015-03-31/functions/${LAMBDA_ARN}/invocations"
+
+aws apigateway put-integration \
+    --rest-api-id "$API_ID" \
+    --resource-id "$ROOT_RESOURCE_ID" \
+    --http-method GET \
+    --type AWS \
+    --integration-http-method POST \
+    --uri "$APIGW_URI" \
+    --passthrough-behavior NEVER \
+    --request-templates '{"application/json":"$input.params(\"value\")"}' >/dev/null
+
+# 3.5 Ensure method/integration responses exist
+aws apigateway put-method-response \
+    --rest-api-id "$API_ID" \
+    --resource-id "$ROOT_RESOURCE_ID" \
+    --http-method GET \
+    --status-code 200 >/dev/null 2>&1 || true
+
+aws apigateway put-integration-response \
+    --rest-api-id "$API_ID" \
+    --resource-id "$ROOT_RESOURCE_ID" \
+    --http-method GET \
+    --status-code 200 \
+    --response-templates '{"application/json":"$input.body"}' >/dev/null 2>&1 || true
+
+# 3.6 Replace Lambda invoke permission safely
+STATEMENT_ID="apigateway-invoke-${API_ID}"
+aws lambda remove-permission \
+    --function-name "$FUNCTION_NAME" \
+    --statement-id "$STATEMENT_ID" >/dev/null 2>&1 || true
+
+aws lambda add-permission \
+    --function-name "$FUNCTION_NAME" \
+    --statement-id "$STATEMENT_ID" \
+    --action lambda:InvokeFunction \
+    --principal apigateway.amazonaws.com \
+    --source-arn "arn:aws:execute-api:${AWS_REGION}:${ACCOUNT_ID}:${API_ID}/*/GET/" >/dev/null
+
+# 3.7 Deploy stage (create new deployment revision each run)
+aws apigateway create-deployment \
+    --rest-api-id "$API_ID" \
+    --stage-name "$STAGE_NAME" >/dev/null
+
+INVOKE_URL="https://${API_ID}.execute-api.${AWS_REGION}.amazonaws.com/${STAGE_NAME}"
+echo "Invoke URL: ${INVOKE_URL}?value=14"
+
+# Optional smoke test
+curl "${INVOKE_URL}?value=14"
+echo
+```
+
+### 4. Optional: concise one-liner smoke test
+
+```bash
+curl "${INVOKE_URL}?value=14"
+```
+
+Expected output:
+
+```text
+196
+```
+
+---
+
+## Expose with API Gateway
+
+For `MathServices::square` (REST API):
+
+1. Create a REST API (Regional).
+2. Create a `GET` method and integrate it with Lambda.
+3. Add query param `value` in Method Request.
+4. In Integration Request, map:
 
 - Name: `value`
 - Mapped from: `method.request.querystring.value`
 
-### Add Mapping Template (critical step)
-
-In **Integration Request** → **Mapping Templates**, add template for `application/json`.
-
-For initial static testing, you can set:
-
-```vtl
-5
-```
-
-Then for real dynamic behavior, replace with:
+5. Add Mapping Template `application/json`:
 
 ```vtl
 $input.params("value")
 ```
 
-This passes only the numeric query value as Lambda input.
+6. Deploy a stage (for example: `Beta`).
 
----
-
-## 🧪 5) Test from API Gateway Console
-
-Use the built-in **Test** feature for the GET method.
-
-Set query parameter:
-
-- `value = 14`
-
-Expected output: `196`
-
-If `value` is missing or non-numeric, invocation should fail (expected for this simple function signature).
-
----
-
-## 🚢 6) Deploy API Stage
-
-1. Click **Actions** → **Deploy API**.
-2. Choose **[New Stage]**.
-3. Stage name: `Beta` (or `dev`, `prod`, etc.).
-4. Deploy.
-
-Invoke URL format:
+Invocation format:
 
 ```text
 https://<api-id>.execute-api.<region>.amazonaws.com/Beta?value=14
@@ -211,114 +379,52 @@ https://<api-id>.execute-api.<region>.amazonaws.com/Beta?value=14
 
 ---
 
-## 🧭 Request Flow (Mental Model)
+## Invocation Tests
 
-```mermaid
-flowchart LR
-    A[Client<br/>GET /Beta?value=14] --> B[API Gateway<br/>REST API GET]
-    B --> C[Mapping Template<br/>input param value]
-    C --> D[AWS Lambda<br/>MathServices square]
-    D --> E[Response<br/>196]
+Recommended validation cases in API Gateway test console or any HTTP client:
 
-    classDef client fill:#FFF4CC,stroke:#B7791F,stroke-width:1.5px,color:#3A2A00;
-    classDef gateway fill:#E6F6FF,stroke:#0B7285,stroke-width:1.5px,color:#083344;
-    classDef mapping fill:#EAF7EC,stroke:#2B8A3E,stroke-width:1.5px,color:#1B4332;
-    classDef lambda fill:#FFE8E8,stroke:#C92A2A,stroke-width:1.5px,color:#5C1A1A;
-    classDef response fill:#F3E8FF,stroke:#7B2CBF,stroke-width:1.5px,color:#3C096C;
-
-    class A client;
-    class B gateway;
-    class C mapping;
-    class D lambda;
-    class E response;
-```
-
-```text
-Client (GET /?value=14)
-	|
-	v
-API Gateway (extract query param)
-	|
-	v
-VTL Mapping Template -> "14"
-	|
-	v
-Lambda Java Handler square(Integer)
-	|
-	v
-196
-```
+| Case | Request | Expected Result |
+| --- | --- | --- |
+| Valid square | `GET .../Beta?value=14` | `196` |
+| Zero | `GET .../Beta?value=0` | `0` |
+| Negative integer | `GET .../Beta?value=-4` | `16` |
+| Missing parameter | `GET .../Beta` | Expected conversion error |
 
 ---
 
-## 🛠 Troubleshooting
+## Troubleshooting
 
 ### Handler not found
 
-- Verify exact handler:
-  - `co.edu.escuelaing.services.MathServices::square`
-- Ensure class exists in uploaded JAR.
+- Validate the exact handler signature.
+- Confirm the uploaded JAR is the latest build.
 
-### `ClassNotFoundException`
+### ClassNotFoundException
 
-- Rebuild with `mvn clean package`.
-- Upload latest JAR from `target/`.
+- Run `mvn clean package` again.
+- Re-upload the artifact from `target/`.
 
-### 500 from API Gateway
+### API Gateway 500 Error
 
-- Check Lambda CloudWatch logs.
-- Confirm mapping template is exactly:
+- Check CloudWatch logs.
+- Confirm Mapping Template is exactly:
 
 ```vtl
 $input.params("value")
 ```
 
-### Input conversion errors
+### Input Conversion Error
 
-- `square(Integer)` requires a valid integer.
-- Avoid sending JSON objects in this lab unless handler signature changes.
-
----
-
-## 💡 Why This Lab Matters
-
-This lab demonstrates core serverless concepts:
-
-- Event-to-method input mapping
-- API Gateway request transformation with VTL
-- Java static handlers in Lambda
-- Fast REST exposure without managing servers
-
-Once this is clear, moving to JSON payloads and custom POJOs becomes straightforward.
+- `square(Integer)` requires a valid integer as input.
+- Do not send a JSON object to this specific handler.
 
 ---
 
-## 🧩 About the Extra Classes
+## References
 
-This repository also includes:
-
-- `User.java`
-- `UserServices.java`
-
-These are useful to evolve the lab into object-based payloads (POJO input/output), which AWS Lambda supports automatically through JSON serialization/deserialization.
+- AWS Lambda Java: https://docs.aws.amazon.com/lambda/latest/dg/lambda-java.html
+- API Gateway Mapping Templates: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html
 
 ---
 
-## 🔒 Cleanup (Avoid Unnecessary Costs)
-
-After finishing the lab:
-
-1. Delete the Lambda function.
-2. Delete the API Gateway API.
-3. Remove unneeded CloudWatch log groups if desired.
-
----
-
-## 📘 References
-
-- AWS Lambda Java docs: https://docs.aws.amazon.com/lambda/latest/dg/lambda-java.html
-- API Gateway mapping templates: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html
-
----
-
-Built for learning serverless fundamentals with Java on AWS. Happy building! 🎉
+Project focused on practical learning for Java, Lambda, and API Gateway integration in a modern serverless flow.
