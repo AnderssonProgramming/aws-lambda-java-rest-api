@@ -213,6 +213,14 @@ https://<api-id>.execute-api.<region>.amazonaws.com/Beta?value=14
 
 ## 🧭 Request Flow (Mental Model)
 
+```mermaid
+flowchart LR
+	A[Client\nGET /Beta?value=14] --> B[API Gateway\nREST API GET Method]
+	B --> C[VTL Mapping Template\n$input.params("value")]
+	C --> D[AWS Lambda\nMathServices::square]
+	D --> E[Response\n196]
+```
+
 ```text
 Client (GET /?value=14)
 	|
